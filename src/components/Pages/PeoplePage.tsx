@@ -24,10 +24,10 @@ type Action =
 const initialState: State = {
   loading: true,
   errors: null,
-  people: [] as Person[],
+  people: [],
 };
 
-function reducer(state: typeof initialState, action: Action) {
+function reducer(state: State, action: Action): State {
   switch (action.type) {
     case ActionType.FETCH_START:
       return { ...state, loading: true, errors: null };
@@ -61,10 +61,7 @@ function getContent(state: State) {
 }
 
 export const PeoplePage: React.FC = () => {
-  const [state, dispatch] = useReducer<React.Reducer<State, Action>>(
-    reducer,
-    initialState,
-  );
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
     const fetchPeople = async () => {
@@ -73,15 +70,18 @@ export const PeoplePage: React.FC = () => {
         const people = await getPeople();
 
         dispatch({ type: ActionType.FETCH_SUCCESS, payload: people });
-      } catch {
+      } catch (error) {
         dispatch({
           type: ActionType.FETCH_ERROR,
-          payload: 'Cannot get people from server',
+          payload:
+            error instanceof Error
+              ? error.message
+              : 'Cannot get people from server',
         });
       }
     };
 
-    fetchPeople().then(() => {});
+    void fetchPeople();
   }, []);
 
   return (
@@ -89,9 +89,7 @@ export const PeoplePage: React.FC = () => {
       <h1 className="title">People Page</h1>
       <div className="block">
         <div className="box table-container">
-          {state.loading && <Loader />}
-
-          {getContent(state)}
+          {state.loading ? <Loader /> : getContent(state)}
         </div>
       </div>
     </>
